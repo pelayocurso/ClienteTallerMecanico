@@ -1,6 +1,7 @@
 
 <template>
 <div class="detail col-sm-12 col-md-6" v-if="vehicle">
+  <alert></alert>
   <form>
     <h3 v-if="vehicle.Id" class="text-center">Modificando Vehiculo</h3>
     <h3 v-else class="text-center">Creando Vehiculo</h3>
@@ -12,22 +13,21 @@
 
     <div class="form-group">
       <label for="type-vehicle">Tipo de Vehiculo: </label>
-      <!-- <input type="text" class="form-control" id="type-vehicle" v-model="vehicle.Type" /> -->
       <div id="type-vehicle" class="radio">
         <label>
-          <input type="radio" id="moto-vehicle" value="MOTO" v-model="vehicle.Type"/>
+          <input type="radio" id="moto-vehicle" value="0" v-model="vehicle.Type"/>
           Moto
         </label>
       </div>
       <div id="type-vehicle" class="radio">
         <label>
-          <input type="radio" id="moto-vehicle" value="COCHE" v-model="vehicle.Type"/>
+          <input type="radio" id="moto-vehicle" value="1" v-model="vehicle.Type"/>
           Coche
         </label>
       </div>
       <div id="type-vehicle" class="radio">
         <label>
-          <input type="radio" id="moto-vehicle" value="CAMION" v-model="vehicle.Type"/>
+          <input type="radio" id="moto-vehicle" value="2" v-model="vehicle.Type"/>
           Camion
         </label>
       </div>
@@ -45,12 +45,18 @@
 
     <div class="form-group">
       <label for="state-vehicle">Estado: </label>
-      <input type="text" class="form-control" id="state-vehicle" v-model="vehicle.State" />
+      <select class="form-control" id="state-vehicle" v-model="vehicle.State">
+        <option value="0">ESPERA</option>
+        <option value="1">ENTRADA</option>
+        <option value="2">REPARACIÓN</option>
+        <option value="3">SALIDA</option>
+        <option value="4">HECHO</option>
+      </select>
     </div>
 
     <div class="form-group">
       <label for="budget-vehicle">Presupuesto: </label>
-      <input type="number" class="form-control" id="budget-vehicle" v-model="vehicle.Budget" />
+      <input type="number" class="form-control" id="budget-vehicle" v-model="vehicle.Budget" step="any" />
     </div>
 
     <div class="form-group">
@@ -69,6 +75,7 @@
 
 <script>
 import axios from 'axios';
+import Alert from '../SingleComponents/Alert.vue';
 import DatetimePicker from '../SingleComponents/DatetimePicker.vue';
 
 export default {
@@ -77,6 +84,7 @@ export default {
 
   components: {
     'datetimepicker': DatetimePicker,
+    'alert': Alert
   },
 
   data() {
@@ -87,90 +95,70 @@ export default {
   },
 
   created() {
-    let _this = this;
+    /* HANDLE OTHER COMPONENTS EVENTS */
     Vue.$on('show-form', (vehicle) => {
-      if (_this.vehicle) {
+      if (this.vehicle) {
         Vue.$emit('refresh-datetimepicker', moment(new Date()).format('MM/DD/YYYY h:mm a'));
       }
 
-      _this.vehicle = vehicle ? vehicle : {
-        Owner: '',
-        Type: 'COCHE',
-        Registration: '',
-        Trouble: '',
-        State: 'ENTRADA',
-        Budget: 1,
-        Date: moment(new Date())
-      };
+      if (vehicle) {
+        this.vehicle = JSON.parse(JSON.stringify(vehicle));
+        this.vehicle.Date = moment(this.vehicle.Date).format('MM/DD/YYYY h:mm a')
+      } else {
+        this.vehicle = {
+          Owner: '',
+          Type: '1',
+          Registration: '',
+          Trouble: '',
+          State: '0',
+          Budget: 1,
+          Date: moment(new Date()).format('MM/DD/YYYY h:mm a')
+        };
+      }
     });
 
     Vue.$on('close-form', () => {
-      _this.vehicle = null;
-    });
-
-    Vue.$on('edit-vehicle', (vehicle) => {
-      if (_this.vehicle) {
-        // Vue.$emit('refresh-datetimepicker', moment(vehicle.Fecha).format('MM/DD/YYYY h:mm a'));
-        Vue.$emit('refresh-datetimepicker', vehicle.Fecha);
-      }
-      _this.vehicle = vehicle;
+      this.vehicle = null;
     });
   },
 
   methods: {
+    /* SERVER REQUESTS */
+    updateVehicle() {
+      axios.put(this.host + '/' + this.vehicle.Id, this.vehicle)
+        .then((response) => {
+          Vue.$emit('show-modal', 'Vehicle modificado', 'El vehiculo ha sido modificado con éxito');
+          this.$emit('modifyVehicle', this.vehicle);
+          this.vehicle = null;
+        })
+        .catch((error) => {
+          //console.log(error.response.data.ModelState);
+          Vue.$emit('show-error-alert', error);
+        });
+    },
+
+    createVehicle() {
+      axios.post(this.host, this.vehicle)
+        .then(response => {
+          Vue.$emit('show-modal', 'Vehiculo creado', 'El nuevo vehiculo ha sido creado con éxito');
+          this.$emit('addVehicle', response.data);
+          this.vehicle = null;
+        })
+        .catch((error) => {
+          console.log(error);
+          Vue.$emit('show-error-alert', error);
+        });
+    },
+
     /* HANDLE SELF EVENTS */
     handleModifyVehicle(event) {
-        event.preventDefault();
-        // debugger;
-        var vehicle = this.vehicle;
-        axios.put(this.host + '/' + vehicle.Id, {
-            Id: vehicle.Id,
-            Fecha: vehicle.Fecha,
-            Descripcion: vehicle.Descripcion,
-            Tipo: vehicle.Tipo,
-            Origen: vehicle.Origen,
-            Destino: vehicle.Destino,
-            Prioridad: vehicle.Prioridad
-          },{headers:{"Content-Type":"application/json"}})
-          .then(response=> {
-            Vue.$emit('show-modal', 'Vehicle modificado', 'El vehicle ha sido modificado con éxito');
-            this.$emit('modifyVehicle', vehicle);
-          }).catch((error) => {
-            // debugger;
-            Vue.$emit('show-modal', error.message, error.stack);
-          });
-
-        this.vehicle = null;
+      event.preventDefault();
+      this.updateVehicle();
     },
 
     handleCreateVehicle(event) {
-        // debugger;
-        event.preventDefault();
-        var vehicle = this.vehicle;
-        if(vehicle.Fecha==""||vehicle.Descripcion==""||vehicle.Tipo==""||vehicle.Origen==""||vehicle.Destino==""||vehicle.Prioridad==""){
-        Vue.$emit('show-modal', 'Guardado no permitido', 'Debe rellenar todos los campos antes de poder guardar. Por favor, revíselo');
-        }
-        else if(vehicle.Prioridad!="Alta"&&vehicle.Prioridad!="Media"&&vehicle.Prioridad!="Baja"){
-        Vue.$emit('show-modal', 'Guardado no permitido', 'Los valores aceptador para el campo Prioridad son Alta, Media o Baja');
-        }
-        else{
-          axios.post(this.host, {
-            Fecha: vehicle.Fecha,
-            Descripcion: vehicle.Descripcion,
-            Tipo: vehicle.Tipo,
-            Origen: vehicle.Origen,
-            Destino: vehicle.Destino,
-            Prioridad: vehicle.Prioridad
-          })
-          .then(response=> {
-            Vue.$emit('show-modal', 'Vehicle creado', 'El nuevo vehicle ha sido creado con éxito');
-            this.$emit('addVehicle', vehicle);
-          });
-
-        }
-
-
-        this.vehicle = null;
+      event.preventDefault();
+      this.createVehicle();
     },
 
     handleCancel(event) {

@@ -37,36 +37,27 @@ export default {
 
   created() {
     this.getAllVehicles();
-
-    Vue.$on('refresh-vehicles', () => {
-      this.getAllVehicles();
-    })
   },
 
   methods: {
     /* SERVER REQUESTS */
     getAllVehicles() {
-      let _this = this;
-      _this.vehicles.length = 0;
-
-      axios.get(this.host).then((response) => {
-        _this.vehicles = response.data;
-        this.vehicles.forEach((vehicle) => {
-          vehicle.Fecha = moment(vehicle.Date).format('MM/DD/YYYY h:mm a');
+      axios.get(this.host)
+        .then((response) => {
+          this.vehicles = response.data;
+        }).catch((error) => {
+          Vue.$emit('show-modal', error.message, error.stack)
         });
-      }).catch((error) => {
-        Vue.$emit('show-modal', error.message, error.stack)
-      });
     },
 
     deleteVehicle(vehicle) {
-      let _this = this;
-      axios.delete(this.host + '/' + vehicle.Id).then((response) => {
-        let index = _this.vehicles.indexOf(vehicle);
-        _this.vehicles.splice(index, 1);
-      }).catch((error) => {
-        Vue.$emit('show-modal', error.message, error.stack);
-      });
+      axios.delete(this.host + '/' + vehicle.Id)
+        .then((response) => {
+          let index = this.vehicles.indexOf(vehicle);
+          this.vehicles.splice(index, 1);
+        }).catch((error) => {
+          console.log(error);
+        });
     },
 
     /* HANDLE SELF EVENTS */
@@ -75,16 +66,11 @@ export default {
     },
 
     handleEditClick(vehicle) {
-      Vue.$emit('edit-vehicle', vehicle);
+      Vue.$emit('show-form', vehicle);
     },
 
     handleDeleteClick(vehicle) {
-      axios.delete(this.host + '/' + vehicle.Id)
-        .then((res) => {
-          Vue.$emit('show-modal', 'Vehicle eliminado', 'El Vehicle ha sido eliminado con éxito');
-          this.getAllVehicles();
-          Vue.$emit('close-form');
-        })
+      this.deleteVehicle(vehicle);
     },
 
     /* HANDLE CHILDREN EVENTS */
