@@ -1,6 +1,6 @@
 
 <template>
-<div class="detail col-sm-12 col-md-6" v-if="vehicle">
+<div v-if="vehicle" class="detail col-sm-12 col-md-6" id="detail">
   <alert></alert>
   <form>
     <h3 v-if="vehicle.Id" class="text-center">Modificando Vehiculo</h3>
@@ -55,7 +55,7 @@
     </div>
 
     <div class="form-group">
-      <label for="budget-vehicle">Presupuesto: </label>
+      <label for="budget-vehicle">Presupuesto(€): </label>
       <input type="number" class="form-control" id="budget-vehicle" v-model="vehicle.Budget" step="any" />
     </div>
 
@@ -127,12 +127,10 @@ export default {
     updateVehicle() {
       axios.put(this.host + '/' + this.vehicle.Id, this.vehicle)
         .then((response) => {
-          Vue.$emit('show-modal', 'Vehicle modificado', 'El vehiculo ha sido modificado con éxito');
           this.$emit('modifyVehicle', this.vehicle);
           this.vehicle = null;
         })
         .catch((error) => {
-          //console.log(error.response.data.ModelState);
           Vue.$emit('show-error-alert', error);
         });
     },
@@ -140,12 +138,10 @@ export default {
     createVehicle() {
       axios.post(this.host, this.vehicle)
         .then(response => {
-          Vue.$emit('show-modal', 'Vehiculo creado', 'El nuevo vehiculo ha sido creado con éxito');
           this.$emit('addVehicle', response.data);
           this.vehicle = null;
         })
         .catch((error) => {
-          console.log(error);
           Vue.$emit('show-error-alert', error);
         });
     },
@@ -163,6 +159,7 @@ export default {
 
     handleCancel(event) {
       event.preventDefault();
+      this.$emit('closeForm');
       this.vehicle = null;
     },
   },

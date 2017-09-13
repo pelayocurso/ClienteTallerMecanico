@@ -1,7 +1,7 @@
 <template>
   <div v-if="show" class="alert alert-dissmisible show"
     :class="{
-      'alert-succes': this.type == 'success',
+      'alert-success': this.type == 'success',
       'alert-info': this.type == 'info',
       'alert-warning': this.type == 'warning',
       'alert-danger': this.type == 'danger',
