@@ -3,28 +3,26 @@
   <alert></alert>
 
   <div class="list" :class="{'col-lg-12' : !show_detail, 'col-lg-6': show_detail}">
-    <button class="btn btn-primary btn-crear" @click="handleCreateNewVehicleClick">Crear nuevo vehiculo</button>
+    <button class="btn btn-primary btn-crear" @click="handleCreateNewToolClick">Crear nuevo herramienta</button>
 
     <div class="table-responsive">
       <table class="table table-hover">
         <thead>
-          <tr>
+          <tr class="tr-row">
             <th>Identificador</th>
-            <th>Dueño</th>
-            <th>Matricula</th>
-            <th>Fecha(Mes/Dia/Año)</th>
+            <th>Tipo</th>
+            <th>Nombre</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="vehicle in vehicles">
-            <td> {{ vehicle.Id }} </td>
-            <td> {{ vehicle.Owner }} </td>
-            <td> {{ vehicle.Registration }} </td>
-            <td> {{ formatDate(vehicle.Date) }} </td>
-            <td class="master-button-group">
-              <button class="btn btn-default" @click="handleEditClick(vehicle)">Editar</button>
-              <button class="btn btn-danger" @click="handleDeleteClick(vehicle)">Borrar</button>
+          <tr v-for="tool in tools" class="tr-row">
+            <td class="td-field"> {{ tool.Id }} </td>
+            <td class="td-field"> {{ tool.Type }} </td>
+            <td class="td-field"> {{ tool.Name }} </td>
+            <td class="td-field master-button-group">
+              <button class="btn btn-default" @click="handleEditClick(tool)">Editar</button>
+              <button class="btn btn-danger" @click="handleDeleteClick(tool)">Borrar</button>
             </td>
           </tr>
         </tbody>
@@ -32,68 +30,68 @@
     </div>
   </div>
 
-  <vehicle @addVehicle="onAddVehicle" @modifyVehicle="onModifyVehicle" @closeForm="onCloseForm" :api_host="host"></vehicle>
+  <tool @addTool="onAddTool" @modifyTool="onModifyTool" @closeForm="onCloseForm" :api_host="host"></tool>
 </div>
 </template>
 
 <script>
-import Vehicle from './Vehicle.vue';
+import Tool from './Tool.vue';
 import Alert from '../SingleComponents/Alert.vue';
 import axios from 'axios';
 
 export default {
-  name: 'vehicle-master',
+  name: 'tool-master',
 
   components: {
-    Vehicle,
+    Tool,
     Alert
   },
 
   data() {
     return {
-      vehicles: [],
-      host: 'http://localhost:50072/api/Vehicles',
+      tools: [],
+      host: 'http://localhost:50072/api/Tools',
       show_detail: false,
     };
   },
 
   created() {
-    this.getAllVehicles();
+    this.getAllTools();
   },
 
   methods: {
     /* SERVER REQUESTS */
-    getAllVehicles() {
+    getAllTools() {
       Vue.$emit('show-loading');
       axios.get(this.host)
         .then((response) => {
           Vue.$emit('close-loading');
-          this.vehicles = response.data;
+          this.tools = response.data;
           Vue.$emit(
             'show-alert',
             'success',
             "<span class='glyphicons glyphicons-ok'></span> " +
-            "Vehiculos cargados satisfactoriamente."
+            "Herramientas cargadas satisfactoriamente."
           );
         }).catch((error) => {
           Vue.$emit('close-loading');
           Vue.$emit('show-error-alert', error);
-          //Vue.$emit('show-modal', error.message, error.stack);
+          // Vue.$emit('show-modal', error.message, error.stack);
         });
     },
 
-    deleteVehicle(vehicle) {
+    deleteTool(tool) {
       Vue.$emit('show-loading');
-      axios.delete(this.host + '/' + vehicle.Id)
+      axios.delete(this.host + '/' + tool.Id)
         .then((response) => {
           Vue.$emit('close-loading');
-          let index = this.vehicles.indexOf(vehicle);
-          this.vehicles.splice(index, 1);
+          let index = this.tools.indexOf(tool);
+          this.tools.splice(index, 1);
           Vue.$emit(
             'show-alert',
             'success',
             "<span class='glyphicons glyphicons-ok'></span> " +
-            "Vehiculo borrado satisfacoriamente."
+            "Herramienta borrada satisfacoriamente."
           );
         }).catch((error) => {
           Vue.$emit('close-loading');
@@ -103,69 +101,101 @@ export default {
     },
 
     /* HANDLE SELF EVENTS */
-    handleCreateNewVehicleClick() {
+    handleCreateNewToolClick() {
       Vue.$emit('close-alert');
       this.show_detail = true;
       Vue.$emit('show-form', null);
     },
 
-    handleEditClick(vehicle) {
+    handleEditClick(tool) {
       Vue.$emit('close-alert');
       this.show_detail = true;
-      Vue.$emit('show-form', vehicle);
+      Vue.$emit('show-form', tool);
     },
 
-    handleDeleteClick(vehicle) {
+    handleDeleteClick(tool) {
       Vue.$emit('close-alert');
       Vue.$emit(
         'show-modal',
         '¿Seguro?',
-        "Esta a punto de borrar un vehiculo",
-        this.deleteVehicle, vehicle
+        "Esta a punto de borrar una herramienta",
+        this.deleteTool, tool
       );
     },
 
     /* HANDLE CHILDREN EVENTS */
-    onAddVehicle(vehicle) {
+    onAddTool(tool) {
       Vue.$emit(
         'show-alert',
         'success',
         "<span class='glyphicons glyphicons-ok'></span>" +
-        "Vehiculo creado satisfacoriamente."
+        "Herramienta creada satisfacoriamente."
       );
-      this.vehicles.push(vehicle);
+      this.tools.push(tool);
       this.show_detail = false;
     },
 
-    onModifyVehicle(vehicleModified) {
+    onModifyTool(toolModified) {
       Vue.$emit(
         'show-alert',
         'success',
         "<span class='glyphicons glyphicons-ok'></span>" +
-        "Vehiculo modificado satisfacoriamente."
+        "Herramienta modificada satisfacoriamente."
       );
       let index = null;
-      this.vehicles.forEach((vehicle) => {
-        if (vehicle.Id == vehicleModified.Id) {
-          index = this.vehicles.indexOf(vehicle);
+      this.tools.forEach((tool) => {
+        if (tool.Id == toolModified.Id) {
+          index = this.tools.indexOf(tool);
         }
       });
-      this.vehicles[index] = vehicleModified;
+      this.tools[index] = toolModified;
       this.show_detail = false;
     },
 
     onCloseForm() {
       this.show_detail = false;
     },
-
-    /* ALMOST COMPUTED VAR */
-    formatDate(date) {
-      return moment(date).format('MM/DD/YYYY');
-    },
   },
 }
 </script>
 
 <style>
-/* SAME AS ToolsMaster*/
+.master-button-group {
+  display: inline-block;
+  padding-left: 30px;
+  padding-right: 0px;
+}
+
+.master-button-group button {
+  width: 75px;
+  margin-left: 5px;
+  margin-bottom: 5px;
+}
+
+.master {
+  padding: 20px;
+  margin: 0px;
+}
+
+.list {
+  -webkit-transition: width 0.5s;
+  -moz-transition: width 0.5s;
+  -o-transition: width 0.5s;
+  transition: width 0.5s;
+}
+
+.btn-crear {
+  width: 100%;
+  margin: 5px 0 5px 0;
+}
+
+thead,
+.tr-row {
+  width: 100%;
+  padding: 0 5px 0 5px;
+}
+
+.td-field {
+  min-width: 130px;
+}
 </style>

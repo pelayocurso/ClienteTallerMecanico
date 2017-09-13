@@ -1,7 +1,7 @@
 
 <template>
 <div v-if="vehicle" class="detail col-sm-12 col-md-6" id="detail">
-  <alert></alert>
+  <alert ref="vehicleAlert"></alert>
   <form>
     <h3 v-if="vehicle.Id" class="text-center">Modificando Vehiculo</h3>
     <h3 v-else class="text-center">Creando Vehiculo</h3>
@@ -98,12 +98,16 @@ export default {
     /* HANDLE OTHER COMPONENTS EVENTS */
     Vue.$on('show-form', (vehicle) => {
       if (this.vehicle) {
-        Vue.$emit('refresh-datetimepicker', moment(new Date()).format('MM/DD/YYYY h:mm a'));
+        Vue.$emit(
+          'refresh-datetimepicker',
+          moment(new Date()).format('MM/DD/YYYY h:mm a')
+        );
       }
 
       if (vehicle) {
         this.vehicle = JSON.parse(JSON.stringify(vehicle));
-        this.vehicle.Date = moment(this.vehicle.Date).format('MM/DD/YYYY h:mm a')
+        this.vehicle.Date = moment(this.vehicle.Date)
+          .format('MM/DD/YYYY h:mm a');
       } else {
         this.vehicle = {
           Owner: '',
@@ -118,38 +122,50 @@ export default {
     });
 
     Vue.$on('close-form', () => {
+      this.$parent.show_detail = false;
       this.vehicle = null;
     });
   },
 
   methods: {
     /* SERVER REQUESTS */
-    updateVehicle() {
-      axios.put(this.host + '/' + this.vehicle.Id, this.vehicle)
+    updateVehicle(vehicle) {
+      Vue.$emit('show-loading');
+      axios.put(this.host + '/' + vehicle.Id, vehicle)
         .then((response) => {
-          this.$emit('modifyVehicle', this.vehicle);
+          Vue.$emit('close-loading');
+          this.$emit('modifyVehicle', vehicle);
           this.vehicle = null;
         })
         .catch((error) => {
-          Vue.$emit('show-error-alert', error);
+          Vue.$emit('close-loading');
+          this.$refs.vehicleAlert.showError(error);
         });
     },
 
     createVehicle() {
+      Vue.$emit('show-loading');
       axios.post(this.host, this.vehicle)
         .then(response => {
+          Vue.$emit('close-loading');
           this.$emit('addVehicle', response.data);
           this.vehicle = null;
         })
         .catch((error) => {
-          Vue.$emit('show-error-alert', error);
+          Vue.$emit('close-loading');
+          this.$refs.vehicleAlert.showError(error);
         });
     },
 
     /* HANDLE SELF EVENTS */
     handleModifyVehicle(event) {
       event.preventDefault();
-      this.updateVehicle();
+      Vue.$emit(
+        'show-modal',
+        'Esta a punto de modificar un vehiculo',
+        "¿Esta seguro de que desea continuar?",
+        this.updateVehicle, this.vehicle
+      );
     },
 
     handleCreateVehicle(event) {

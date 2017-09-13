@@ -12,7 +12,7 @@
     </tab>
 
     <tab name="Herramientas" :selected="false">
-      <!-- <evento-master></evento-master> -->
+      <tools-master></tools-master>
     </tab>
   </div>
 </div>
@@ -22,7 +22,7 @@
 import Tab from './Tab.vue';
 
 import VehiclesMaster from '../VehiclesComponents/VehiclesMaster.vue';
-// import ToolsMaster from '../ToolsComponents/ToolsMaster.vue';
+import ToolsMaster from '../ToolsComponents/ToolsMaster.vue';
 
 
 export default {
@@ -30,7 +30,7 @@ export default {
   components: {
     Tab,
     VehiclesMaster,
-    // ToolsMaster
+    ToolsMaster
   },
 
   data() {
@@ -49,6 +49,7 @@ export default {
         tab.activated = (tab.href == selected_tab.href);
       });
       Vue.$emit('close-form');
+      Vue.$emit('close-alert');
     }
   }
 };
